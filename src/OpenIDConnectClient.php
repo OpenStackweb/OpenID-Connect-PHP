@@ -239,7 +239,7 @@ class OpenIDConnectClient
         $this->clientSecret = $client_secret;
 
         $this->issuerValidator = function($iss){
-	        return ($iss === $this->getIssuer() || $iss === $this->getWellKnownIssuer() || $iss === $this->getWellKnownIssuer(true));
+            return ($iss === $this->getIssuer() || $iss === $this->getWellKnownIssuer() || $iss === $this->getWellKnownIssuer(true));
         };
     }
 
@@ -316,6 +316,12 @@ class OpenIDConnectClient
                 user_error('Warning: JWT signature verification unavailable.');
             }
 
+            // Save the id token
+            $this->idToken = $token_json->id_token;
+
+            // Save the access token
+            $this->accessToken = $token_json->access_token;
+
             // If this is a valid claim
             if ($this->verifyJWTclaims($claims, $token_json->access_token)) {
 
@@ -324,12 +330,6 @@ class OpenIDConnectClient
 
                 // Save the full response
                 $this->tokenResponse = $token_json;
-
-                // Save the id token
-                $this->idToken = $token_json->id_token;
-
-                // Save the access token
-                $this->accessToken = $token_json->access_token;
 
                 // Save the verified claims
                 $this->verifiedClaims = $claims;
@@ -917,8 +917,8 @@ class OpenIDConnectClient
      */
     private function verifyJWTclaims($claims, $accessToken = null) {
         if(isset($claims->at_hash) && isset($accessToken)){
-            if(isset($this->getAccessTokenHeader()->alg) && $this->getAccessTokenHeader()->alg !== 'none'){
-                $bit = substr($this->getAccessTokenHeader()->alg, 2, 3);
+            if(isset($this->getIdTokenHeader()->alg) && $this->getIdTokenHeader()->alg !== 'none'){
+                $bit = substr($this->getIdTokenHeader()->alg, 2, 3);
             }else{
                 // TODO: Error case. throw exception???
                 $bit = '256';
@@ -932,7 +932,7 @@ class OpenIDConnectClient
             && ( !isset($claims->exp) || ((gettype($claims->exp) === 'integer') && ($claims->exp >= time() - $this->leeway)))
             && ( !isset($claims->nbf) || ((gettype($claims->nbf) === 'integer') && ($claims->nbf <= time() + $this->leeway)))
             && ( !isset($claims->at_hash) || $claims->at_hash === $expecte_at_hash )
-    );
+        );
     }
 
     /**
@@ -1657,7 +1657,7 @@ class OpenIDConnectClient
                 $this->enc_type = PHP_QUERY_RFC3986;
                 break;
 
-        	default:
+            default:
                 break;
         }
 
